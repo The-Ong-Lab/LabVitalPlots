@@ -21,22 +21,14 @@
 #          Used: https://shiny.rstudio.com/reference/shiny/0.14/fileInput.html
 ###############################################################################
 
-#Empties Global Environment cache
-rm(list = ls())
-
-
-#Set working directory to current file location
-#To set to own working directory
-#  select "Session->Set Working Directory->To Source File Location"
-#  then copy result in console into current "setwd("")".
-# setwd("~/Dropbox/25-Charlene-Jack-Ivy/10-Shiny App/LabVital_Plots_20230419")
+# Libraries
 library(shiny)
 library(tidyverse)
 library(magrittr)
 library(lubridate)
 library(ggplot2) # Future iterations, change plots to use ggplot
-# source('R/helpers.R') # Custom functions for plotting
 
+# Global Options
 options(shiny.maxRequestSize = 30*1024^2)
 
 
@@ -192,3 +184,4 @@ server <- function(input, output) {
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+
