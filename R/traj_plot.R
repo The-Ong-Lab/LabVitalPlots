@@ -1,3 +1,5 @@
+print('traj plot')
+
 traj_plot <- function(trajecories, events=NULL, abnormalities=NULL){
   cols <- colnames(trajecories)
   
@@ -39,8 +41,8 @@ traj_plot <- function(trajecories, events=NULL, abnormalities=NULL){
 }
 
 
-traj_plot(
-  pup %>% filter(id==4),
-  outcomes %>% filter(id==4),
-  abnormal %>% filter(id==4)
-  )
+# traj_plot(
+#   pup %>% filter(id==4),
+#   outcomes %>% filter(id==4),
+#   abnormal %>% filter(id==4)
+#   )
