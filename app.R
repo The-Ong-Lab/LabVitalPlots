@@ -21,174 +21,99 @@
 #          Used: https://shiny.rstudio.com/reference/shiny/0.14/fileInput.html
 ###############################################################################
 
-#Empties Global Environment cache
-rm(list = ls())
-
-
-#Set working directory to current file location
-#To set to own working directory
-#  select "Session->Set Working Directory->To Source File Location"
-#  then copy result in console into current "setwd("")".
-# setwd("~/Dropbox/25-Charlene-Jack-Ivy/10-Shiny App/LabVital_Plots_20230419")
+# Libraries
 library(shiny)
 library(tidyverse)
 library(magrittr)
 library(lubridate)
 library(ggplot2) # Future iterations, change plots to use ggplot
-# source('R/helpers.R') # Custom functions for plotting
 
+# Global Options
 options(shiny.maxRequestSize = 30*1024^2)
 
-
-# Application title
-title <- titlePanel("Lab Value and Vital Sign Plots")
-
-# Upload data
-ui_upload <- sidebarLayout(
-  sidebarPanel(
-    
-    fileInput("fileOTV", 
-              "Choose OTV file (.csv)",
-              accept = c(
-                "text/csv",
-                "text/comma-separated-values,text/plain",
-                ".csv")),
-    
-    fileInput("fileLTV", 
-              "Choose LTV file (.csv)",
-              accept = c(
-                "text/csv",
-                "text/comma-separated-values,text/plain",
-                ".csv")),
-    
-    textInput('var',
-              'Name of variable to plot',
-              placeholder = 'gluc, wbc, sbp, etc.'
-              ),
-    
-    numericInput('pt',
-                 'Patient ID to plot',
-                 0, 0, 10000, 1),
-    
-    actionButton('goButton',
-                 '',
-                 icon = icon('rotate-right'))
-  ),
-  
-  
-  mainPanel(
-    h4("Raw data preview:"),
-    
-    tableOutput("otv_preview"),
-    
-    fluidRow(
-      column(width = 4, tableOutput("ltv_preview")),
-      column(width = 6, plotOutput("distPlot"), offset = 2)
-    ),
-    
-    plotOutput('vitalPlot')
-  )
-)
-
-
+# Application User Interface
 ui <- fluidPage(
-  # UI goes here
-  title,
-  ui_upload,
-)
+  titlePanel(" "),
+  sidebarLayout(
+    ui_sidebar,
+    ui_main
+  ))
+
+
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  output$otv_preview <- renderTable({
-    #   input$file will be NULL initially. After the user selects
-    #   # and uploads a file, it will be a data frame with 'name',
-    #   # 'size', 'type', and 'datapath' columns. The 'datapath'
-    #   # column will contain the local filenames where the data can
-    #   # be found.
-    req(input$fileOTV, input$var)
+  
+  observe({
     inFile <- input$fileOTV
-    inVar <- input$var
+    if (is.null(inFile)){
+      return(NULL)}
     
-    if (is.null(inFile) | is.null(inVar))
-      return(NULL)
+    df <- read_csv(inFile$datapath)
     
-    raw <- read.csv(inFile$datapath, stringsAsFactors = FALSE) 
+    ## Update drop-down list of IDs
+    ids <- unique(df[[1]])
+    updateSelectInput(inputId = 'pt', choices = ids)
     
-    raw %>% select(1:10) %>% head()
+    ## Update drop-down list of event variables
+    var_names <- c("", df %>% select(ends_with('dt')) %>% colnames())
+    updateSelectInput(inputId = 'out1', choices = var_names)
+    updateSelectInput(inputId = 'out2', choices = var_names)
+    updateSelectInput(inputId = 'out3', choices = var_names)
   })
   
-  output$ltv_preview <- renderTable({
-    #   input$file will be NULL initially. After the user selects
-    #   # and uploads a file, it will be a data frame with 'name',
-    #   # 'size', 'type', and 'datapath' columns. The 'datapath'
-    #   # column will contain the local filenames where the data can
-    #   # be found.
-    req(input$fileLTV, input$var, input$pt)
+  observe({
     inFile <- input$fileLTV
-    inVar <- input$var
-    inPt <- input$pt
-    
-    # if (is.null(inFile) | is.null(inVar))
-    #   return(NULL)
-    
-    raw <- read.csv(inFile$datapath, stringsAsFactors = FALSE) 
-    
-    raw %<>%
-      select(ptid, dateteme=dt, inVar) %>%
-      filter(ptid == inPt)
-    
-    raw[[inVar]] <- as.numeric( raw[[inVar]] )
-      
-    raw %>%
-      drop_na(inVar) %>%
-      head()
-  })
-  
-  output$distPlot <- renderPlot({
-    # generate bins based on input$bins from ui.R
-    req(input$fileLTV, input$var, input$pt)
-    inFile <- input$fileLTV
-    inVar <- input$var
-    inPt <- input$pt
-    
-    raw <- read.csv(inFile$datapath, stringsAsFactors = FALSE) %>%
-      filter(ptid == inPt)
-    x <- raw[[inVar]]
-    
-    # draw the histogram with the specified number of bins
-    hist(x, col = 'darkgray', border = 'white', 
-         main = paste('Hist of', inVar))
-  })
-  
-  output$vitalPlot <- renderPlot({
-    ### Get inputs
-    req(input$fileOTV, input$fileLTV, input$var, input$pt)
-    inVar <- input$var
-    inPt <- input$pt
-    inFileOTV <- input$fileOTV
-    inFileLTV <- input$fileLTV
+    if (is.null(inFile)){
+      return(NULL)}
 
+    df <- read_csv(inFile$datapath)
     
-    ### Read Data  
-    TSV <- read.csv(inFileLTV$datapath) %>% 
-      rename(id=ptid) %>% 
-      filter(id == inPt)
-    TSV$dt <- as.POSIXct(TSV$dt)
+    ## Update dropdown list of trajectory variables
+    var_names <- colnames(df)[-1:-4]
+    updateSelectInput(inputId = 'var', choices = var_names)
+  })
+  
+  
+  ## Action of goButton
+  observeEvent(input$goButton, {
+    req(input$fileOTV, input$fileLTV, input$pt, input$var)
     
-    OTV <- read.csv(inFileOTV$datapath) %>% 
-      rename(id=ptid) %>% 
-      filter(id == inPt)
-    OTV$pres %<>% ymd_hms(truncated = 3)
-    OTV$lsw %<>% ymd_hms(truncated = 3)
-    OTV$surgdt %<>% ymd_hms(truncated = 3)
+    ptid <- input$pt
+    var <- input$var
     
+    ## Read data (to-do: make df reactive and only read once in script)
+    otv <- read_csv(input$fileOTV$datapath) %>%
+      select(id = 1, any_of(c(input$out1, input$out2, input$out3))) %>%
+      filter(id == input$pt)
+    ltv <- read_csv(input$fileLTV$datapath) %>%
+      select(id = 1, dt = dt, all_of(c(var))) %>% ## need to update datetime to be relative position
+      filter(id == input$pt)
     
-    ### Plot
-    clean_and_plot(inVar, inPt, OTV, TSV) %>% suppressMessages()
-    clean_and_plot('wbc', inPt, OTV, TSV) %>% suppressMessages()
+    ## Set up/clean data for plotting
+    trajectories <- ltv %>%
+      select(id, dt, all_of(c(var))) %>%
+      pivot_longer(!c(id,dt), 
+                   values_drop_na = TRUE)
+    
+    if ( (is.null(input$out1) | input$out1 == "") & (is.null(input$out2) | input$out2 == "") & (is.null(input$out3) | input$out3 == "") ){
+      events <- NULL
+    } else {
+      events <- otv %>%
+        select(id, any_of(c(input$out1, input$out2, input$out3))) %>%
+        pivot_longer(!id, values_drop_na = TRUE)
+    }
+    
+    ## Make plots
+    output$test_plot <- renderPlot({
+      traj_plot(trajectories, events)
+    })
     
   })
-}
+  
+} ## End of server
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+
+
