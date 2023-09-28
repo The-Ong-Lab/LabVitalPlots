@@ -13,14 +13,16 @@ csvInput <- function(id){
 # Upload data
 ui_sidebar <- sidebarPanel(
   
-  h3('One-time Variable Upload'),
-  p('Dataset of admission, discharge, and one-time outcome variables.'),
-  csvInput("fileOTV"),
-  
   h3('Longitudinal Variable Upload'),
   p('Dataset of longitudinal, repeated measured variables.
       NOTE: This app assumes the first two columns are (1) the patient identifier and (2) the measurement datetimes.'),
   csvInput("fileLTV"),
+  
+  h3('One-time Variable Upload'),
+  p('Dataset of admission, discharge, and one-time outcome variables.'),
+  csvInput("fileOTV"),
+  
+  
   
   h2('Plot Details'),
   h4('Variable to Plot'),
@@ -32,7 +34,7 @@ ui_sidebar <- sidebarPanel(
   
   
   h4('Event/Outcome Lines to Add'),
-  p('Select up to three outcome date-times to add as vertical lines to the graph.Dropdown populates based on the uploaded data.'),
+  p('Select up to three outcome date-times to add as vertical lines to the graph. Dropdown populates based on the uploaded data.'),
   selectInput('out1', NULL, choices = ""),
   selectInput('out2', NULL, choices = ""),
   selectInput('out3', NULL, choices = ""),
@@ -47,6 +49,6 @@ ui_main <- mainPanel(
   h1('Trajectory Plot'),
   p("Once the necessary information is entered in the sidebar pannel, press the 'Refresh Plot' button. 
     Then, we will generate an individual plot of a patient's lab value or vital sign trajectory."),
-  br(), br(), br()
+  br(), br(), br(),
   plotOutput('test_plot')
 )
