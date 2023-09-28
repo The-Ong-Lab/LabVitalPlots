@@ -49,7 +49,7 @@ server <- function(input, output) {
     if (is.null(inFile)){
       return(NULL)}
     
-    df <- read_csv(inFile$datapath)
+    df <- read_csv(inFile$datapath) 
     
     ## Update drop-down list of IDs
     ids <- unique(df[[1]])
@@ -69,15 +69,45 @@ server <- function(input, output) {
 
     df <- read_csv(inFile$datapath)
     
+    # if (input$var != ""){
+    #   df <- df %>%
+    #     drop_na(input$var)
+    # }
+    # 
+    # ## Update drop-down list of IDs
+    # ids <- unique(df[[1]])
+    # updateSelectInput(inputId = 'pt', choices = ids)
+    
     ## Update dropdown list of trajectory variables
     var_names <- colnames(df)[-1:-4]
     updateSelectInput(inputId = 'var', choices = var_names)
+  })
+  
+  observeEvent(input$var, {
+    inFile <- input$fileLTV
+    if (is.null(inFile)){
+      return(NULL)}
+    
+    df <- read_csv(inFile$datapath)
+    
+    if (input$var != ""){
+      df <- df %>%
+        drop_na(input$var)
+    }
+
+    ## Update drop-down list of IDs
+    ids <- unique(df[[1]])
+    updateSelectInput(inputId = 'pt', choices = ids)
   })
   
   
   ## Action of goButton
   observeEvent(input$goButton, {
     req(input$fileOTV, input$fileLTV, input$pt, input$var)
+    
+    print(input$out1)
+    print(class(input$out1))
+    print(is.null(input$out1))
     
     ptid <- input$pt
     var <- input$var
@@ -96,14 +126,19 @@ server <- function(input, output) {
       pivot_longer(!c(id,dt), 
                    values_drop_na = TRUE)
     
-    if ( (is.null(input$out1) | input$out1 == "") & (is.null(input$out2) | input$out2 == "") & (is.null(input$out3) | input$out3 == "") ){
+    if ( input$out1 == "" & input$out2 == "" & input$out3 == "" ){
       events <- NULL
     } else {
       events <- otv %>%
         select(id, any_of(c(input$out1, input$out2, input$out3))) %>%
         pivot_longer(!id, values_drop_na = TRUE)
+      if (nrow(events) < 1){
+        events <- NULL
+      } else {
+        events <- events
+      }
     }
-    
+
     ## Make plots
     output$test_plot <- renderPlot({
       traj_plot(trajectories, events)

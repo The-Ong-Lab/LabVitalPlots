@@ -23,12 +23,13 @@ ui_sidebar <- sidebarPanel(
   csvInput("fileLTV"),
   
   h2('Plot Details'),
-  h4('Patient ID'),
-  p('Choose the desired patient. Dropdown populates based on the uploaded data.'),
-  selectInput('pt', NULL, choices = ""),
   h4('Variable to Plot'),
   p('Select the variable trajectory to plot. Dropdown populates based on the available columns in the logitudinal data.'),
   selectInput('var', NULL, choices = ""),
+  h4('Patient ID'),
+  p('Choose the desired patient. Dropdown populates based on the uploaded data.'),
+  selectInput('pt', NULL, choices = ""),
+  
   
   h4('Event/Outcome Lines to Add'),
   p('Select up to three outcome date-times to add as vertical lines to the graph.Dropdown populates based on the uploaded data.'),
@@ -46,5 +47,6 @@ ui_main <- mainPanel(
   h1('Trajectory Plot'),
   p("Once the necessary information is entered in the sidebar pannel, press the 'Refresh Plot' button. 
     Then, we will generate an individual plot of a patient's lab value or vital sign trajectory."),
+  br(), br(), br()
   plotOutput('test_plot')
 )
