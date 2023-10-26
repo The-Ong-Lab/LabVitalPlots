@@ -1,13 +1,14 @@
 ##### .csv file upload #####
-csvInput <- function(id){
+csvInput <- function(id, ...){
   fileInput(
     id, 
     label = NULL,
     accept = c(
       "text/csv",
       "text/comma-separated-values,text/plain",
-      ".csv")
-  )}
+      ".csv"),
+    ...)
+  }
 
 
 # Upload data
@@ -16,11 +17,13 @@ ui_sidebar <- sidebarPanel(
   h3('Longitudinal Variable Upload'),
   p('Dataset of longitudinal, repeated measured variables.
       NOTE: This app assumes the first two columns are (1) the patient identifier and (2) the measurement datetimes.'),
-  csvInput("fileLTV"),
+  csvInput("fileLTV", 
+           placeholder = 'Sample data loaded'),
   
   h3('One-time Variable Upload'),
   p('Dataset of admission, discharge, and one-time outcome variables.'),
-  csvInput("fileOTV"),
+  csvInput("fileOTV", 
+           placeholder = 'Sample data loaded'),
   
   
   
@@ -50,5 +53,5 @@ ui_main <- mainPanel(
   p("Once the necessary information is entered in the sidebar pannel, press the 'Refresh Plot' button. 
     Then, we will generate an individual plot of a patient's lab value or vital sign trajectory."),
   br(), br(), br(),
-  plotOutput('test_plot')
+  plotOutput('traj_plot')
 )

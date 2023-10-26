@@ -21,6 +21,8 @@
 #          Used: https://shiny.rstudio.com/reference/shiny/0.14/fileInput.html
 ###############################################################################
 
+# options(shiny.reactlog = TRUE)
+
 # Libraries
 library(shiny)
 library(tidyverse)
@@ -41,54 +43,71 @@ ui <- fluidPage(
 
 
 
-# Define server logic required to draw a histogram
+# Load sample data
+samp_otv <- read_csv('data/sample_otv.csv')
+samp_ltv <- read_csv('data/sample_ltv.csv')
+
+
+# Define server logic
 server <- function(input, output) {
   
+  
+  ## Reactive dataframes
+  OTV <- reactive({
+    if (is.null(input$fileOTV))
+      samp_otv
+    else
+      read_csv(input$fileOTV$datapath)
+  })
+  
+  LTV <- reactive({
+    if (is.null(input$fileLTV))
+      samp_ltv
+    else
+      read_csv(input$fileLTV$datapath)
+  })
+  
+  
+  ## Update drop-down based on OTV data
   observe({
-    inFile <- input$fileOTV
-    if (is.null(inFile)){
-      return(NULL)}
-    
-    df <- read_csv(inFile$datapath) 
+    # inFile <- input$fileOTV
+    # if (is.null(inFile)){
+    #   return(NULL)}
+    df <- OTV() #read_csv(inFile$datapath) 
     
     ## Update drop-down list of IDs
-    ids <- unique(df[[1]])
-    updateSelectInput(inputId = 'pt', choices = ids)
+    # ids <- unique(df[[1]])
+    # updateSelectInput(inputId = 'pt', choices = ids)
     
     ## Update drop-down list of event variables
-    var_names <- c("", df %>% select(ends_with('dt')) %>% colnames())
+    var_names <- c("", 
+                   df %>% 
+                     # select(ends_with('dt')) %>% 
+                     select(-1) %>%
+                     colnames()
+                   )
     updateSelectInput(inputId = 'out1', choices = var_names)
     updateSelectInput(inputId = 'out2', choices = var_names)
     updateSelectInput(inputId = 'out3', choices = var_names)
   })
   
+  ## Update drop-downs based on LTV data
   observe({
-    inFile <- input$fileLTV
-    if (is.null(inFile)){
-      return(NULL)}
-
-    df <- read_csv(inFile$datapath)
+    # inFile <- input$fileLTV
+    # if (is.null(inFile)){
+    #   return(NULL)}
+    df <- LTV() #read_csv(inFile$datapath)
     
-    # if (input$var != ""){
-    #   df <- df %>%
-    #     drop_na(input$var)
-    # }
-    # 
-    # ## Update drop-down list of IDs
-    # ids <- unique(df[[1]])
-    # updateSelectInput(inputId = 'pt', choices = ids)
-    
-    ## Update dropdown list of trajectory variables
-    var_names <- colnames(df)[-1:-4]
+    ## Update drop-down list of trajectory variables
+    var_names <- colnames(df)[-1:-2] #:-4]
     updateSelectInput(inputId = 'var', choices = var_names)
   })
   
   observeEvent(input$var, {
-    inFile <- input$fileLTV
-    if (is.null(inFile)){
-      return(NULL)}
-    
-    df <- read_csv(inFile$datapath)
+    # inFile <- input$fileLTV
+    # if (is.null(inFile)){
+    #   return(NULL)}
+    df <- LTV() #read_csv(inFile$datapath)
     
     if (input$var != ""){
       df <- df %>%
@@ -103,20 +122,21 @@ server <- function(input, output) {
   
   ## Action of goButton
   observeEvent(input$goButton, {
-    req(input$fileOTV, input$fileLTV, input$pt, input$var)
+    # req(input$fileOTV, input$fileLTV, input$pt, input$var)
+    req(input$pt, input$var)
     
-    print(input$out1)
-    print(class(input$out1))
-    print(is.null(input$out1))
+    # print(input$out1)
+    # print(class(input$out1))
+    # print(is.null(input$out1))
     
     ptid <- input$pt
     var <- input$var
     
     ## Read data (to-do: make df reactive and only read once in script)
-    otv <- read_csv(input$fileOTV$datapath) %>%
+    otv <- OTV() %>% #read_csv(input$fileOTV$datapath) %>%
       select(id = 1, any_of(c(input$out1, input$out2, input$out3))) %>%
       filter(id == input$pt)
-    ltv <- read_csv(input$fileLTV$datapath) %>%
+    ltv <- LTV() %>% #read_csv(input$fileLTV$datapath) %>%
       select(id = 1, dt = dt, all_of(c(var))) %>% ## need to update datetime to be relative position
       filter(id == input$pt)
     
@@ -140,7 +160,7 @@ server <- function(input, output) {
     }
 
     ## Make plots
-    output$test_plot <- renderPlot({
+    output$traj_plot <- renderPlot({
       traj_plot(trajectories, events)
     })
     
