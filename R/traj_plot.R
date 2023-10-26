@@ -27,16 +27,6 @@ traj_plot <- function(trajecories, events=NULL, abnormalities=NULL){
       labs(color = 'Outcomes')
   }
   
-  ## Add in stars at abnormal points
-  # if (!is.null(abnormalities)){
-  #   abn_cols <- colnames(abnormalities)
-  #   plt <- plt + 
-  #     geom_point(data = abnormalities, 
-  #                aes(x = .data[[abn_cols[2]]], 
-  #                    y = .data[[abn_cols[3]]]),
-  #                shape = 17)
-  # }
-  
   ## Labels
   plt <- plt +
     labs(
